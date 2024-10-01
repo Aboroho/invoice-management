@@ -1,6 +1,6 @@
 "use client";
 
-import generatePDF, { Resolution, Margin, Options } from "react-to-pdf";
+import generatePDF, { Margin, Options } from "react-to-pdf";
 
 import { monthNames } from "@/constants";
 import { numberToWords } from "@/lib/utils";
@@ -8,7 +8,6 @@ import { numberToWords } from "@/lib/utils";
 import { useSearchParams } from "next/navigation";
 import React, { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 
 const options: Options = {
   method: "open",
