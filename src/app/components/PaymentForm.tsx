@@ -69,7 +69,6 @@ function PaymentForm() {
 
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     try {
-      console.log(data);
       const response = await fetch("/api/invoice", {
         method: "post",
         body: JSON.stringify(data),
