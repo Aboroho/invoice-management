@@ -71,24 +71,21 @@ function Invoice() {
 
   const getPdfElement = () => document.getElementById("invoice");
 
-  const pdfDownloadHandler = () => {
-    options.method = "save";
-    wrapperRef.current?.classList.remove("hidden");
+  const handlePdf = (options: Options) => {
+    const el = document.getElementById("pdf-wrapper");
+    el?.classList.remove("hidden");
     console.log(wrapperRef.current);
     generatePDF(getPdfElement, options);
-    wrapperRef.current?.classList.add("hidden");
+    el?.classList.add("hidden");
   };
-  //     if (receiptElement) {
-
-  //   };
+  const pdfDownloadHandler = () => {
+    options.method = "save";
+    handlePdf(options);
+  };
 
   const openPdfHandler = async () => {
     options.method = "open";
-    wrapperRef.current?.classList.remove("hidden");
-    console.log(wrapperRef.current);
-    generatePDF(getPdfElement, options);
-    wrapperRef.current?.classList.add("hidden");
-    // console.log(data);
+    handlePdf(options);
   };
 
   return (
@@ -101,7 +98,7 @@ function Invoice() {
           <Button onClick={openPdfHandler}>Open</Button>
         </div>
       </div>
-      <div ref={wrapperRef} className="hidden">
+      <div id="pdf-wrapper" className="hidden">
         <div
           className="bg-white p-10 max-w-screen-lg mx-auto border shadow-md rounded-md"
           id="invoice"
