@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 
 // ui
@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 
 import { Card } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
+import { useRef, useState } from "react";
 
 const date = new Date();
 
@@ -28,27 +29,32 @@ const formSchema = z.object({
   name: z.string().min(2, {
     message: "Name must be at least 2 characters.",
   }),
-  //   roll: z.string().min(1, "Roll number must not empty").optional(),
   studentClass: z.string().min(3, "Class name must be at least 3 characters"),
   mobile: z.string().length(11, "Phone number must be 11 digits."),
-  //   date : z.date(),
-  tutionFees: z
-    .number()
-    .min(0, "Tution Fees must be greater than or equal to 0"),
-  sessionFees: z
-    .number()
-    .min(0, "Session Fees must be greater than or equal to 0"),
-  admissionFees: z
-    .number()
-    .min(0, "Admissioin must be greater than or equal to 0"),
-  fine: z.number().min(0, "Fine can not be negative").optional(),
+
   forMonth: z.enum(monthNames),
   forYear: z.number().max(date.getFullYear() + 1),
   studentID: z.string().min(1, "Student ID must be at least 1 characters"),
 });
 
+const feeSchema = z.object({
+  feeDetails: z.string().min(3, "Fee must be at least 3 digits"),
+  feeAmount: z.number().min(0, "Fee can not be negetive"),
+});
+const feeFormSchema = z
+  .object({
+    fees: z.array(feeSchema),
+  })
+  .merge(feeSchema);
+
+type Invoice = {
+  fees: Array<z.infer<typeof feeSchema>>;
+} & z.infer<typeof formSchema>;
+
 function PaymentForm() {
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const submitButtonRef = useRef<HTMLButtonElement>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -57,230 +63,290 @@ function PaymentForm() {
       studentClass: "",
       mobile: "",
       forMonth: monthNames[date.getMonth()],
-      tutionFees: 0,
-      fine: 0,
+      fees: [{}],
       //   roll: "",
       forYear: date?.getFullYear(),
-      sessionFees: 0,
-      admissionFees: 0,
+
       studentID: "",
     },
   });
 
+  const feeForm = useForm<z.infer<typeof feeFormSchema>>({
+    resolver: zodResolver(feeFormSchema),
+    defaultValues: {
+      feeAmount: 0,
+      feeDetails: "",
+      fees: [],
+    },
+  });
+
+  const {
+    fields: fees,
+    prepend: feePrepend,
+    remove: removeFee,
+  } = useFieldArray({
+    control: feeForm.control,
+    name: "fees",
+  });
+
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
-    try {
-      const response = await fetch("/api/invoice", {
-        method: "post",
-        body: JSON.stringify(data),
-      });
-      const paymentDetails = await response.json();
-      const invoiceID = paymentDetails._id;
-      if (invoiceID) router.push("/invoice?invoiceID=" + invoiceID);
-    } catch (err) {
-      console.log(err);
-    }
+    const invoice: Invoice = {
+      ...data,
+      fees: feeForm.getValues("fees"),
+    };
+
+    setLoading(true);
+    const response = await fetch("/api/invoice", {
+      method: "post",
+      body: JSON.stringify(invoice),
+    });
+    setLoading(false);
+    const paymentDetails = await response.json();
+    const invoiceID = paymentDetails._id;
+    if (invoiceID) router.push("/invoice?invoiceID=" + invoiceID);
   };
 
+  const handleFeeDeletion = (index: number) => {
+    removeFee(index);
+  };
+
+  const addNewFee = (data: z.infer<typeof feeSchema>) => {
+    feePrepend({ feeDetails: data.feeDetails, feeAmount: data.feeAmount });
+    feeForm.setValue("feeAmount", 0);
+    feeForm.setValue("feeDetails", "");
+  };
+
+  const handleSubmit = async () => {
+    if (submitButtonRef.current) submitButtonRef.current.click();
+  };
+
+  if (loading)
+    return (
+      <div className="w-screen h-screen flex justify-center items-center">
+        <h4>Loading...</h4>
+      </div>
+    );
+
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)}>
-        <div className="flex flex-col gap-2">
-          <Card className="px-4 py-10 mb-4 flex flex-col gap-4">
-            <h4 className="mb-3 font-bold">Student Details</h4>
-            {/* Name Field */}
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="font-semibold">Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Student Name" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+    <>
+      {/* other details */}
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)}>
+          <div className="flex flex-col gap-2">
+            <Card className="px-4 py-10 mb-4 flex flex-col gap-4">
+              <h4 className="mb-3 font-bold">Student Details</h4>
+              {/* Name Field */}
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="font-semibold">Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Student Name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            {/* Roll Field */}
-            <FormField
-              control={form.control}
-              name="studentID"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="font-semibold">Student ID</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Student ID" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              {/* Roll Field */}
+              <FormField
+                control={form.control}
+                name="studentID"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="font-semibold">Student ID</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Student ID" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            {/* Class Field */}
-            <FormField
-              control={form.control}
-              name="studentClass"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="font-semibold">Class</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Student studentClass" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              {/* Class Field */}
+              <FormField
+                control={form.control}
+                name="studentClass"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="font-semibold">Class</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Student studentClass" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            {/* Mobile Field */}
-            <FormField
-              control={form.control}
-              name="mobile"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="font-semibold">Mobile</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Student Mobile Number" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </Card>
+              {/* Mobile Field */}
+              <FormField
+                control={form.control}
+                name="mobile"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="font-semibold">Mobile</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Student Mobile Number" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </Card>
 
-          <Card className="px-4 py-6 flex flex-col gap-4 mb-4">
-            <h2 className="mb-3 font-bold">Fees For</h2>
-            <FormField
-              control={form.control}
-              name="forYear"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="font-semibold">Fees for Year</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      onChange={(e) => field.onChange(parseInt(e.target.value))}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <Card className="px-4 py-6 flex flex-col gap-4 mb-4">
+              <h2 className="mb-3 font-bold">Fees For</h2>
+              <FormField
+                control={form.control}
+                name="forYear"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="font-semibold">
+                      Fees for Year
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        onChange={(e) =>
+                          field.onChange(parseInt(e.target.value))
+                        }
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <FormField
-              control={form.control}
-              name="forMonth"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="font-semibold">
-                    Fees for Month
-                  </FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </Card>
+              <FormField
+                control={form.control}
+                name="forMonth"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="font-semibold">
+                      Fees for Month
+                    </FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </Card>
 
-          {/* tutionFees Field */}
+            {/* Fees Field */}
+          </div>
 
-          <Card className="px-4 py-6 flex gap-4 flex-col">
+          <Button type="submit" className="hidden" ref={submitButtonRef}>
+            Submit
+          </Button>
+        </form>
+      </Form>
+
+      {/* fees form */}
+      <Form {...form}>
+        <form onSubmit={feeForm.handleSubmit(addNewFee)}>
+          <Card className="px-4 py-6 mb-10">
             <h2 className="font-semibold mb-3">Fees Details</h2>
-            <FormField
-              control={form.control}
-              name="tutionFees"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="font-semibold">Tution Fees</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      placeholder="Amount in Taka"
-                      {...field}
-                      onChange={(e) => {
-                        field.onChange(parseInt(e.target.value) || undefined);
-                      }}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="flex gap-3 md:flex-col lg:flex-row lg:*:flex-1">
+              <FormField
+                control={feeForm.control}
+                name="feeDetails"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="font-semibold">Fee Details</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="text"
+                        placeholder="Description of the fee"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <FormField
-              control={form.control}
-              name="sessionFees"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="font-semibold">Session Fees</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      placeholder="Amount in Taka"
-                      {...field}
-                      onChange={(e) => {
-                        field.onChange(parseInt(e.target.value) || undefined);
-                      }}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="admissionFees"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="font-semibold">
-                    Admission Fees
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      placeholder="Amount in Taka"
-                      {...field}
-                      onChange={(e) => {
-                        field.onChange(parseInt(e.target.value) || undefined);
-                      }}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              <FormField
+                control={feeForm.control}
+                name="feeAmount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="font-semibold">Fee amount</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="Amount in Taka"
+                        {...field}
+                        onChange={(e) => {
+                          field.onChange(parseInt(e.target.value) || undefined);
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
-            {/* Fine Field */}
-            <FormField
-              control={form.control}
-              name="fine"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="font-semibold">Fine</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      placeholder="Fine"
-                      {...field}
-                      onChange={(e) => {
-                        field.onChange(parseInt(e.target.value) || undefined);
-                      }}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+            <Button type="submit" className="mt-4">
+              Add
+            </Button>
+
+            <div className="my-4 flex flex-col gap-4 mb-10">
+              <div className="flex gap-2 bg-slate-200 p-2 font-semibold">
+                <div className="flex-1 text-center ">Fee Details</div>
+                <div className="flex-1 text-center">Fee Amount</div>
+              </div>
+
+              {fees.length == 0 && (
+                <div className="bg-slate-100 text-sm text-slate-400 p-3 text-center">
+                  No fees added
+                </div>
               )}
-            />
+              {fees.map((fee, index) => (
+                <div
+                  key={fee.id}
+                  className="flex gap-2 *:flex-1 border p-2 px-4"
+                >
+                  <div className="self-center">{fee.feeDetails}</div>
+                  <div className="flex text-center">
+                    <span className="self-center font-bold flex-1">
+                      {fee.feeAmount.toFixed(2)}
+                    </span>{" "}
+                    <Button
+                      className="ml-auto bg-red-500"
+                      size="sm"
+                      onClick={() => handleFeeDeletion(index)}
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex justify-end">
+              <div className="p-4">
+                <span className="font-bold">Total</span> :{" "}
+                <span className="font-bold">
+                  {" "}
+                  {fees
+                    .reduce((prev, cur) => prev + cur.feeAmount, 0)
+                    .toFixed(2)}{" "}
+                </span>
+                BDT
+              </div>
+            </div>
           </Card>
-        </div>
-        {/* Submit Button */}
-        <Button type="submit" className="mt-4">
-          Submit
-        </Button>
-      </form>
-    </Form>
+        </form>
+      </Form>
+      <Button className="font-bold mb-12" onClick={handleSubmit}>
+        Generate Invoice{" "}
+      </Button>
+    </>
   );
 }
 

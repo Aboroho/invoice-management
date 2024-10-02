@@ -10,20 +10,14 @@ const invoiceSchema = z.object({
   name: z.string().min(2, {
     message: "Name must be at least 2 characters.",
   }),
-  //   roll: z.string().min(1, "Roll number must not empty").optional(),
   studentClass: z.string().min(3, "Class name must be at least 3 characters"),
   mobile: z.string().length(11, "Phone number must be 11 digits."),
-  //   date : z.date(),
-  tutionFees: z
-    .number()
-    .min(0, "Tution Fees must be greater than or equal to 0"),
-  sessionFees: z
-    .number()
-    .min(0, "Session Fees must be greater than or equal to 0"),
-  admissionFees: z
-    .number()
-    .min(0, "Admissioin must be greater than or equal to 0"),
-  fine: z.number().min(0, "Fine can not be negative").optional(),
+  fees: z.array(
+    z.object({
+      feeDetails: z.string().min(3, "Fee must be at least 3 digits"),
+      feeAmount: z.number().min(0, "Fee can not be negetive"),
+    })
+  ),
   forMonth: z.enum(monthNames),
   forYear: z.number().max(date.getFullYear()),
   studentID: z.string().min(1, "Student ID must be at least 1 characters"),

@@ -27,26 +27,20 @@ const invoiceSchema = new mongoose.Schema({
     required: true,
     length: [11, "Phone number must be 11 digits."],
   },
-  tutionFees: {
-    type: Number,
-    required: true,
-    min: [0, "Tution Fee must be greater than or equal to 0"],
-  },
-  sessionFees: {
-    type: Number,
-    required: true,
-    min: [0, "Session Fee must be greater than or equal to 0"],
-  },
-  admissionFees: {
-    type: Number,
-    required: true,
-    min: [0, "Admission Fee must be greater than or equal to 0"],
-  },
-  fine: {
-    type: Number,
-    min: [0, "Fine cannot be negative"],
-    default: 0,
-  },
+  fees: [
+    {
+      feeDetails: {
+        type: String,
+        required: true,
+        length: [3, "Fee details must be at least 3 digits"],
+      },
+      feeAmount: {
+        type: Number,
+        required: true,
+        min: [0, "Fee can not be negetive"],
+      },
+    },
+  ],
   forMonth: {
     type: String,
     enum: [

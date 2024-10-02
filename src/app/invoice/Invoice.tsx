@@ -8,6 +8,7 @@ import { numberToWords } from "@/lib/utils";
 import { useSearchParams } from "next/navigation";
 import React, { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 const options: Options = {
   method: "open",
@@ -35,22 +36,26 @@ function Invoice() {
   const params = useSearchParams();
   const invoiceID = params.get("invoiceID");
 
-  const [data, setData] = useState<Record<string, string>>({});
+  const [data, setData] = useState<Record<string, any>>({ fees: [] });
   const {
     name,
-    roll,
+
     studentClass,
     mobile,
     forMonth,
     forYear,
-    fine,
-    tutionFees,
-    sessionFees,
-    admissionFees,
+    fees,
     studentID,
   } = data;
 
-  const total = tutionFees + admissionFees + sessionFees + fine;
+  console.log(data);
+
+  const total = !fees
+    ? 0
+    : fees.reduce(
+        (prev: number, cur: { feeAmount: number }) => prev + cur.feeAmount,
+        0
+      );
 
   const date = new Date();
   const dateToday = monthNames[date.getMonth()] + "," + date.getFullYear();
@@ -171,62 +176,22 @@ function Invoice() {
               </tr>
             </thead>
             <tbody>
-              <tr className="border-collapse">
-                <td className="border-2 border-black px-4  pb-4 font-bold">
-                  Tution Fees
-                </td>
-                <td className="border-2 border-black px-4  pb-4 font-bold">
-                  {parseInt(tutionFees).toFixed(2)}
-                  {parseInt(tutionFees) > 0 && (
-                    <span className="text-gray-600 font-semibold text-sm">
-                      {" "}
-                      ({numberToWords(parseInt(tutionFees))} Taka Only)
-                    </span>
-                  )}
-                </td>
-              </tr>
-              <tr>
-                <td className="border-2 border-black px-4  pb-4 font-bold">
-                  Session Fees
-                </td>
-                <td className="border-2 border-black px-4  pb-4 font-bold">
-                  {parseInt(sessionFees).toFixed(2)}
-                  {parseInt(sessionFees) > 0 && (
-                    <span className="text-gray-600 font-semibold text-sm">
-                      {" "}
-                      ({numberToWords(parseInt(sessionFees))} Taka Only)
-                    </span>
-                  )}
-                </td>
-              </tr>
-              <tr>
-                <td className="border-2 border-black px-4  pb-4 font-bold">
-                  Admission Fees
-                </td>
-                <td className="border-2 border-black px-4  pb-4 font-bold">
-                  {parseInt(admissionFees).toFixed(2)}
-                  {parseInt(admissionFees) > 0 && (
-                    <span className="text-gray-600 font-semibold text-sm">
-                      {" "}
-                      ({numberToWords(parseInt(admissionFees))} Taka Only)
-                    </span>
-                  )}
-                </td>
-              </tr>
-              <tr>
-                <td className="border-2 border-black px-4  pb-4 font-bold">
-                  Fine
-                </td>
-                <td className="border-2 border-black px-4  pb-4 font-bold">
-                  {parseInt(fine).toFixed(2)}{" "}
-                  {parseInt(fine) > 0 && (
-                    <span className="text-gray-600 font-semibold text-sm">
-                      {" "}
-                      ({numberToWords(parseInt(fine))} Taka Only)
-                    </span>
-                  )}
-                </td>
-              </tr>
+              {fees.map((fee: { feeAmount: number; feeDetails: string }) => (
+                <tr className="border-collapse" key={fee.feeDetails}>
+                  <td className="border-2 border-black px-4  pb-4 font-bold">
+                    Tution Fees
+                  </td>
+                  <td className="border-2 border-black px-4  pb-4 font-bold">
+                    {fee.feeAmount.toFixed(2)}
+                    {fee.feeAmount > 0 && (
+                      <span className="text-gray-600 font-semibold text-sm">
+                        {" "}
+                        ({numberToWords(fee.feeAmount)} Taka Only)
+                      </span>
+                    )}
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
 
@@ -341,76 +306,27 @@ function Invoice() {
             </tr>
           </thead>
           <tbody>
-            <tr className="border-collapse">
-              <td className="border-2 border-black px-4  py-2 font-bold">
-                Tution Fees
-              </td>
-              <td className="border-2 border-black px-4  py-2 font-bold">
-                {parseInt(tutionFees).toFixed(2)}
-                {parseInt(tutionFees) > 0 && (
-                  <span className="text-gray-600 font-semibold text-sm">
-                    {" "}
-                    ({numberToWords(parseInt(tutionFees))} Taka Only)
-                  </span>
-                )}
-              </td>
-            </tr>
-            <tr>
-              <td className="border-2 border-black px-4   py-2 font-bold">
-                Session Fees
-              </td>
-              <td className="border-2 border-black px-4   py-2 font-bold">
-                {parseInt(sessionFees).toFixed(2)}
-                {parseInt(sessionFees) > 0 && (
-                  <span className="text-gray-600 font-semibold text-sm">
-                    {" "}
-                    ({numberToWords(parseInt(sessionFees))} Taka Only)
-                  </span>
-                )}
-              </td>
-            </tr>
-            <tr>
-              <td className="border-2 border-black px-4   py-2 font-bold">
-                Admission Fees
-              </td>
-              <td className="border-2 border-black px-4   py-2 font-bold">
-                {parseInt(admissionFees).toFixed(2)}
-                {parseInt(admissionFees) > 0 && (
-                  <span className="text-gray-600 font-semibold text-sm">
-                    {" "}
-                    ({numberToWords(parseInt(admissionFees))} Taka Only)
-                  </span>
-                )}
-              </td>
-            </tr>
-            <tr>
-              <td className="border-2 border-black px-4  py-2  font-bold">
-                Fine
-              </td>
-              <td className="border-2 border-black px-4   py-2 font-bold">
-                {parseInt(fine).toFixed(2)}{" "}
-                {parseInt(fine) > 0 && (
-                  <span className="text-gray-600 font-semibold text-sm">
-                    {" "}
-                    ({numberToWords(parseInt(fine))} Taka Only)
-                  </span>
-                )}
-              </td>
-            </tr>
+            {fees.map((fee: { feeAmount: number; feeDetails: string }) => (
+              <tr className="border-collapse" key={fee.feeDetails}>
+                <td className="border-2 border-black px-4  pb-4 font-bold">
+                  Tution Fees
+                </td>
+                <td className="border-2 border-black px-4  pb-4 font-bold">
+                  {fee.feeAmount.toFixed(2)}
+                  {fee.feeAmount > 0 && (
+                    <span className="text-gray-600 font-semibold text-sm">
+                      {" "}
+                      ({numberToWords(fee.feeAmount)} Taka Only)
+                    </span>
+                  )}
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
 
         {/* Totals */}
         <div className="text-right mb-4">
-          {/* <p className="text-gray-700">
-            <strong>Subtotal:</strong>{" "}
-          </p>
-          <p className="text-gray-700">
-            <strong>Tax Rate:</strong>{" "}
-          </p>
-          <p className="text-gray-700">
-            <strong>Tax Amount:</strong>{" "}
-          </p> */}
           <p className="text-lg font-bold text-gray-900">
             <strong>
               {" "}
@@ -427,17 +343,6 @@ function Invoice() {
         </div>
 
         {/* Terms & Conditions */}
-        <div className="border-t-2 border-black pt-4 text-gray-700 flex gap-6">
-          <div className="border-t-2 border-black mt-20 flex-1 text-center">
-            Depositor's Signature and Mobile
-          </div>
-          <div className="border-t-2 border-black mt-20 flex-1 text-center">
-            Officer
-          </div>
-          <div className="border-t-2 border-black mt-20 flex-1 text-center">
-            Authorised Officer
-          </div>
-        </div>
       </div>
 
       {/* button group */}
