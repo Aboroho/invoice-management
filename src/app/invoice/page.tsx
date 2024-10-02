@@ -1,12 +1,13 @@
 import React, { Suspense } from "react";
 import Invoice from "./Invoice";
+import { LoaderCircle } from "lucide-react";
 
 type Props = {};
 
 function Loading() {
   return (
-    <div className="w-screen h-screen flex justify-center items-center">
-      <h4>Loading...</h4>
+    <div className="w-ful h-[400px] bg-slate-200 flex justify-center items-center">
+      <LoaderCircle />
     </div>
   );
 }

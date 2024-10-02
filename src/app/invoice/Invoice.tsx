@@ -9,6 +9,7 @@ import { useSearchParams } from "next/navigation";
 import React, { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { LoaderCircle } from "lucide-react";
 
 const options: Options = {
   method: "open",
@@ -36,7 +37,9 @@ function Invoice() {
   const params = useSearchParams();
   const invoiceID = params.get("invoiceID");
 
+  const [loading, setLoading] = useState(true);
   const [data, setData] = useState<Record<string, any>>({ fees: [] });
+
   const {
     name,
 
@@ -48,8 +51,6 @@ function Invoice() {
     studentID,
   } = data;
 
-  console.log(data);
-
   const total = !fees
     ? 0
     : fees.reduce(
@@ -59,17 +60,21 @@ function Invoice() {
 
   const date = new Date();
   const dateToday = monthNames[date.getMonth()] + "," + date.getFullYear();
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const fetchedData = await fetch("api/invoice/" + invoiceID, {
+        method: "get",
+      });
+      setData(await fetchedData.json());
+    } catch (err) {
+      console.log(err);
+    } finally {
+      setLoading(false);
+    }
+  };
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const fetchedData = await fetch("api/invoice/" + invoiceID, {
-          method: "get",
-        });
-        setData(await fetchedData.json());
-      } catch (err) {
-        console.log(err);
-      }
-    };
     fetchData();
   }, [invoiceID]);
 
@@ -90,6 +95,13 @@ function Invoice() {
     options.method = "open";
     handlePdf(options);
   };
+
+  if (loading)
+    return (
+      <div className="w-full h-[400px] bg-slate-200 flex justify-center items-center">
+        <LoaderCircle className="w-9 animate-spin" />
+      </div>
+    );
 
   return (
     <div>

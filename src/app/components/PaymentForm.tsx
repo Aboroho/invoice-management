@@ -3,8 +3,11 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
+import toast from "react-hot-toast";
 
 // ui
+import { LoaderCircle } from "lucide-react";
+
 import {
   Form,
   FormField,
@@ -53,7 +56,7 @@ type Invoice = {
 
 function PaymentForm() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
+
   const submitButtonRef = useRef<HTMLButtonElement>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -63,7 +66,6 @@ function PaymentForm() {
       studentClass: "",
       mobile: "",
       forMonth: monthNames[date.getMonth()],
-      fees: [{}],
       //   roll: "",
       forYear: date?.getFullYear(),
 
@@ -95,12 +97,19 @@ function PaymentForm() {
       fees: feeForm.getValues("fees"),
     };
 
-    setLoading(true);
-    const response = await fetch("/api/invoice", {
+    const invPromise = fetch("/api/invoice", {
       method: "post",
       body: JSON.stringify(invoice),
     });
-    setLoading(false);
+
+    toast.promise(invPromise, {
+      loading: "Creating, please wait",
+      success: "Successfully created",
+      error: "Something went wrong",
+    });
+
+    const response = await invPromise;
+
     const paymentDetails = await response.json();
     const invoiceID = paymentDetails._id;
     if (invoiceID) router.push("/invoice?invoiceID=" + invoiceID);
@@ -119,13 +128,6 @@ function PaymentForm() {
   const handleSubmit = async () => {
     if (submitButtonRef.current) submitButtonRef.current.click();
   };
-
-  if (loading)
-    return (
-      <div className="w-screen h-screen flex justify-center items-center">
-        <h4>Loading...</h4>
-      </div>
-    );
 
   return (
     <>
@@ -246,7 +248,7 @@ function PaymentForm() {
       </Form>
 
       {/* fees form */}
-      <Form {...form}>
+      <Form {...feeForm}>
         <form onSubmit={feeForm.handleSubmit(addNewFee)}>
           <Card className="px-4 py-6 mb-10">
             <h2 className="font-semibold mb-3">Fees Details</h2>
@@ -343,6 +345,7 @@ function PaymentForm() {
           </Card>
         </form>
       </Form>
+
       <Button className="font-bold mb-12" onClick={handleSubmit}>
         Generate Invoice{" "}
       </Button>
