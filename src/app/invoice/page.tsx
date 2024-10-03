@@ -1,3 +1,5 @@
+"use client";
+
 import React, { Suspense } from "react";
 import Invoice from "./Invoice";
 import { LoaderCircle } from "lucide-react";

@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Page,
   Text,
@@ -109,7 +111,7 @@ type Props = {
   studentClass: string;
   studentID: string;
   mobile: string;
-  fees: { feeAmount: number; feeDetails: string }[];
+  fees: { feeAmount: number; feeDetails: string; _id?: string }[];
   total: number;
   dateToday: string;
 };
@@ -204,7 +206,7 @@ const InvoicePDF = ({
             </View>
             {/* Table Rows */}
             {fees.map((fee) => (
-              <View style={styles.tableRow} key={fee.feeDetails}>
+              <View style={styles.tableRow} key={fee._id || fee.feeDetails}>
                 <Text style={[styles.tableCell, { flex: 1 }]}>
                   {fee.feeDetails}
                 </Text>

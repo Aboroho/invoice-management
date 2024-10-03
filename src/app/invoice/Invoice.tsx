@@ -8,10 +8,9 @@ import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 
 import { LoaderCircle } from "lucide-react";
-import { pdf, PDFDownloadLink } from "@react-pdf/renderer";
+import { pdf } from "@react-pdf/renderer";
 import { saveAs } from "file-saver";
-
-import InvoicePDF from "./InvoicePDF";
+import InvoicePDF from "@/app/invoice/InvoicePDF";
 
 type Invoice = {
   invoiceID: string;
@@ -62,6 +61,7 @@ function Invoice() {
 
   const downloadPdf = async () => {
     const fileName = `albab-invoice-${invoiceID}.pdf`;
+
     const blob = await pdf(
       <InvoicePDF
         {...data}
@@ -97,26 +97,11 @@ function Invoice() {
         <div className="flex w-full justify-end gap-4">
           {Object.entries(data).length > 0 && (
             <Button className="bg-green-700" onClick={downloadPdf}>
-              {/* <PDFDownloadLink
-                fileName={`albab-invoice-${invoiceID}.pdf`}
-                document={
-                  <InvoicePDF
-                    {...data}
-                    total={total}
-                    dateToday={dateToday}
-                    invoiceID={invoiceID || ""}
-                  />
-                }
-              >
-                
-              </PDFDownloadLink> */}
               Download Pdf
             </Button>
           )}
         </div>
       </div>
-
-      {/* pdf to print | hidden from user */}
 
       {/* summary to show */}
       <div
