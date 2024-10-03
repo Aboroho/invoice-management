@@ -42,7 +42,7 @@ const formSchema = z.object({
 
 const feeSchema = z.object({
   feeDetails: z.string().min(3, "Fee must be at least 3 digits"),
-  feeAmount: z.number().min(0, "Fee can not be negetive"),
+  feeAmount: z.number().min(0, "Fee can not be empty or negetive"),
 });
 const feeFormSchema = z
   .object({
@@ -76,7 +76,7 @@ function PaymentForm() {
   const feeForm = useForm<z.infer<typeof feeFormSchema>>({
     resolver: zodResolver(feeFormSchema),
     defaultValues: {
-      feeAmount: 0,
+      feeAmount: -1,
       feeDetails: "",
       fees: [],
     },
@@ -282,8 +282,9 @@ function PaymentForm() {
                         type="number"
                         placeholder="Amount in Taka"
                         {...field}
+                        value={field.value == -1 ? "" : field.value}
                         onChange={(e) => {
-                          field.onChange(parseInt(e.target.value) || undefined);
+                          field.onChange(parseInt(e.target.value));
                         }}
                       />
                     </FormControl>
